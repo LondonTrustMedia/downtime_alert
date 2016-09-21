@@ -50,12 +50,16 @@ Options:
 
 		// check SOCKS5 proxies
 		for name, mconfig := range config.Services.Socks5 {
-			// require two failures in a row to report it, to prevent notification on momentary net glitches
+			// require three failures in a row to report it, to prevent notification on momentary net glitches
+			// sometimes can fail with an invalid credentials error if we don't check three times... strange
 			err = CheckSocks5(mconfig)
 			if err != nil {
 				err = CheckSocks5(mconfig)
 				if err != nil {
-					FailAndNotify(config.Notify, name, fmt.Sprintf("Host: %s\nError: %s", mconfig.Host, err.Error()))
+					err = CheckSocks5(mconfig)
+					if err != nil {
+						FailAndNotify(config.Notify, name, fmt.Sprintf("Host: %s\nError: %s", mconfig.Host, err.Error()))
+					}
 				}
 			}
 		}
