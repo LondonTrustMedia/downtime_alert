@@ -1,0 +1,49 @@
+# service monitor config file
+
+# notify targets and configuration
+notify:
+    # default targets for our notifications
+    default-targets:
+        # australian phone numbers to send notices to
+        sms-telstra:
+            - "0123456789"
+            - "0987654321"
+
+        # email addresses to send notices to
+        email:
+            - "test@example.com"
+            - "test2@example.com"
+
+    # sms notifications sent with Telstra
+    sms-telstra:
+        # sms app key
+        key: app-key-here
+
+        # sms app secret
+        secret: app-secret-here
+
+    # email notifications via X API
+    email-etc:
+        # blah
+
+# services to monitor
+services:
+    # websites / URLs
+    web:
+        "ABC Website":
+            url: https://example.com/
+        "ABC Blog":
+            url: https://blog.example.com/
+    # socks5 proxy
+    socks5:
+        "ABC SOCKS5 Proxy":
+            # hostname / port
+            host: proxy.example.com
+            port: 1080
+
+            # credentials to access the proxy
+            username: x1234567
+            password: qwertyuiop
+
+            # domain to test connections with
+            test-domain: example.com
