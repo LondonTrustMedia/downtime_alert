@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/gamexg/proxyclient"
+	"github.com/DanielOaks/proxyclient"
 )
 
 // CheckSocks5 checks the given SOCKS5 proxy and returns an error if it doesn't work.
