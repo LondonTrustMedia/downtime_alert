@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/). For the purpo
 ## Unreleased
 Initial version of servicemonitor.
 
-* Telstra-SMS notifications.
+* Telstra SMS notifications.
+* Sendgrid email notifications.
 * SOCKS5 monitoring.
 * Webpage monitoring.

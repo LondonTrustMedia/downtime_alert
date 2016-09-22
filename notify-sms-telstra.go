@@ -28,8 +28,8 @@ func (ttm *TelstraTextMessage) ToJSON() (string, error) {
 	return messageString, err
 }
 
-// SendSMS sends a message over Telstra's SMS network to the specified number.
-func SendSMS(consumerKey string, consumerSecret string, number string, message string) error {
+// SendSMSTelstra sends a message over Telstra's SMS network to the specified number.
+func SendSMSTelstra(consumerKey string, consumerSecret string, number string, message string) error {
 	// get authorization token
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://api.telstra.com/v1/oauth/token?client_id=%s&client_secret=%s&grant_type=client_credentials&scope=SMS", consumerKey, consumerSecret), nil)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")

@@ -11,8 +11,12 @@ notify:
 
         # email addresses to send notices to
         email:
-            - "test@example.com"
-            - "test2@example.com"
+            -
+                name: "Test User"
+                address: test@example.com
+            -
+                name: "Test User 5"
+                address: test5@example.com
 
     # sms notifications sent with Telstra
     sms-telstra:
@@ -22,9 +26,16 @@ notify:
         # sms app secret
         secret: app-secret-here
 
-    # email notifications via X API
-    email-etc:
-        # blah
+    # email notifications via Sendgrid API
+    email-sendgrid:
+        # from email name
+        from-name: "Status Monitor"
+
+        # from email address
+        from-address: monitor@example.com
+
+        # Sendgrid API key
+        api-key: abcd1234
 
 # services to monitor
 services:

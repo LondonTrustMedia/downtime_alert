@@ -15,10 +15,14 @@ func FailAndNotify(nconfig NotifyConfig, serviceName string, errorMessage string
 	// send Telstra SMS to the given phone numbers.
 	for _, phoneNumber := range nconfig.DefaultTargets.SmsTelstra {
 		log.Println("Sending SMS notification of failure to", phoneNumber)
-		SendSMS(nconfig.SmsTelstra.Key, nconfig.SmsTelstra.Secret, phoneNumber, message)
+		SendSMSTelstra(nconfig.SmsTelstra.Key, nconfig.SmsTelstra.Secret, phoneNumber, message)
 	}
 
-	//TODO(dan): Alert via email service as well.
+	// send Sendgrid emails to the given targets.
+	if len(nconfig.DefaultTargets.EmailSendgrid) > 0 {
+		log.Println("Sending email notification of failure to", nconfig.DefaultTargets.EmailSendgrid)
+		SendEmailSendgrid(nconfig.EmailSendgrid.APIKey, nconfig.EmailSendgrid.FromName, nconfig.EmailSendgrid.FromAddress, nconfig.DefaultTargets.EmailSendgrid, message)
+	}
 }
 
 func main() {

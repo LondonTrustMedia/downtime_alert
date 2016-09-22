@@ -6,10 +6,16 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// SendgridAddressConfig holds the config for a Sendgrid email address
+type SendgridAddressConfig struct {
+	Name    string
+	Address string
+}
+
 // NotifyTargetsConfig holds notification targets.
 type NotifyTargetsConfig struct {
-	SmsTelstra []string `yaml:"sms-telstra"`
-	EmailEtc   []string `yaml:"email-etc"`
+	SmsTelstra    []string                `yaml:"sms-telstra"`
+	EmailSendgrid []SendgridAddressConfig `yaml:"email-sendgrid"`
 }
 
 // SmsTelstraConfig holds the configuration for Telsta SMS notifications.
@@ -18,11 +24,18 @@ type SmsTelstraConfig struct {
 	Secret string
 }
 
+// EmailSendgridConfig holds the configuration for Sendgrid email notifications.
+type EmailSendgridConfig struct {
+	FromName    string `yaml:"from-name"`
+	FromAddress string `yaml:"from-address"`
+	APIKey      string `yaml:"api-key"`
+}
+
 // NotifyConfig holds the configuration for the notifiers.
 type NotifyConfig struct {
 	DefaultTargets NotifyTargetsConfig `yaml:"default-targets"`
 	SmsTelstra     SmsTelstraConfig    `yaml:"sms-telstra"`
-	// EmailEtc       EmailEtcConfig      `yaml:"email-etc"`
+	EmailSendgrid  EmailSendgridConfig `yaml:"email-sendgrid"`
 }
 
 // WebpageConfig holds the monitor configuration for a web page.
