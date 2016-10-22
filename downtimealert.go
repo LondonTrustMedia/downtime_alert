@@ -12,7 +12,7 @@ import (
 // FailAndNotify notifies about the failure using whatever methods have been selected and errors out.
 func FailAndNotify(nconfig da.NotifyConfig, serviceName string, errorMessage string) {
 	message := fmt.Sprintf("== %s is down ==\n%s", serviceName, errorMessage)
-	log.Println("NOTIFYING:", message)
+	log.Println(message)
 
 	// send Telstra SMS to the given phone numbers.
 	for _, phoneNumber := range nconfig.DefaultTargets.SmsTelstra {
