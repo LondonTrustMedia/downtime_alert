@@ -98,3 +98,5 @@ _testmain.go
 /config.yaml
 /compile.sh
 /servicemonitor
+/.vscode
+/*.db
