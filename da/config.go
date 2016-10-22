@@ -1,10 +1,16 @@
-package main
+package da
 
 import (
 	"io/ioutil"
 
 	"gopkg.in/yaml.v2"
 )
+
+// OngoingConfig holds the configuration used for ongoing issues.
+type OngoingConfig struct {
+	InitialMaxAlerts int    `yaml:"initial-max-alerts"`
+	OngoingDelay     string `yaml:"ongoing-delay"`
+}
 
 // SendgridAddressConfig holds the config for a Sendgrid email address
 type SendgridAddressConfig struct {
@@ -54,6 +60,10 @@ type Socks5Config struct {
 
 // Config holds the entire configuration for the service monitor.
 type Config struct {
+	Datastore string
+
+	Ongoing OngoingConfig
+
 	Notify NotifyConfig
 
 	//TODO(dan): Possibly allow additional notify targets on specific services?

@@ -1,5 +1,16 @@
 # service monitor config file
 
+# file for datastore - keeps track of ongoing downtimes
+datastore: "store.db"
+
+# ongoing issues, where we continually detect downtimes
+ongoing:
+    # number of alerts to do in a row when we first detect problems
+    initial-max-alerts: 3
+
+    # after the initial burst, how long to wait between each notification
+    ongoing-delay: 1h
+
 # notify targets and configuration
 notify:
     # default targets for our notifications

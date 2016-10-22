@@ -1,4 +1,4 @@
-package main
+package da
 
 import (
 	sendgrid "github.com/sendgrid/sendgrid-go"
