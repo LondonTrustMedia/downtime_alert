@@ -1,7 +1,10 @@
 package da
 
 import (
+	"fmt"
 	"io/ioutil"
+
+	"time"
 
 	"gopkg.in/yaml.v2"
 )
@@ -62,6 +65,10 @@ type Socks5Config struct {
 type Config struct {
 	Datastore string
 
+	RecheckDelay string `yaml:"recheck-delay"`
+
+	RecheckDelayDuration time.Duration
+
 	Ongoing OngoingConfig
 
 	Notify NotifyConfig
@@ -84,6 +91,12 @@ func LoadConfig(filename string) (*Config, error) {
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {
 		return nil, err
+	}
+
+	// gget RecheckDelayDuration
+	config.RecheckDelayDuration, err = time.ParseDuration(config.RecheckDelay)
+	if err != nil {
+		return nil, fmt.Errorf("Could not parse RecheckDelay: %s", err.Error())
 	}
 
 	return &config, nil

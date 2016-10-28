@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 
+	"time"
+
 	"github.com/LondonTrustMedia/downtime_alert/da"
 	"github.com/docopt/docopt-go"
 	"github.com/tidwall/buntdb"
@@ -67,6 +69,8 @@ Options:
 			var failure bool
 			err = da.CheckSocks5(mconfig)
 			if err != nil {
+				// wait for momentary net glitches to pass
+				time.Sleep(config.RecheckDelayDuration)
 				err = da.CheckSocks5(mconfig)
 				if err != nil {
 					failure = true
@@ -92,6 +96,8 @@ Options:
 
 			err = da.CheckWebpage(mconfig)
 			if err != nil {
+				// wait for momentary net glitches to pass
+				time.Sleep(config.RecheckDelayDuration)
 				err = da.CheckWebpage(mconfig)
 				if err != nil {
 					failure = true

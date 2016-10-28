@@ -3,6 +3,10 @@
 # file for datastore - keeps track of ongoing downtimes
 datastore: "store.db"
 
+# time to delay between re-checking failed sites
+# to help stop notifying on momentary net issues on the checking machine
+recheck-delay: "10s"
+
 # ongoing issues, where we continually detect downtimes
 ongoing:
     # number of alerts to do in a row when we first detect problems
