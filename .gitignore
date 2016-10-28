@@ -98,5 +98,6 @@ _testmain.go
 /config.yaml
 /compile.sh
 /servicemonitor
+/downtimealert
 /.vscode
 /*.db
