@@ -13,7 +13,7 @@ ongoing:
     initial-max-alerts: 3
 
     # after the initial burst, how long to wait between each notification
-    ongoing-delay: 1h
+    ongoing-delay: 20m
 
 # notify targets and configuration
 notify:
