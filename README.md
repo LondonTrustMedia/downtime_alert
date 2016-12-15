@@ -9,14 +9,17 @@ Written by Daniel <doaks@londontrustmedia.com>, so yell at me if you need any he
 
 ## Databases and Data Stores
 
-So, this program stores two separate types of data between instances:
+We need to store data between different runs of the downtime alerter. Different runs of the downtime alerter can be active at one time, which make things very annoying and fidgety when using flat-file or similar file-based datastores.
 
-1. Data that we can throw away with no issue. For example, which set of credentials did we last use for the SOCKS proxy?
-2. Data which must/should be preserved. Mostly, historical instances of downtime, webpage speeds, etc. SLIs which we can use later to make decisions or view how our services are going overall.
-
-These must be preserved across multiple instances of the monitor. As such, this presents a problem: How do we preserve both of these things across multiple instances, while keeping the monitor lightweight and basically to a single binary?
+How do we preserve info across multiple instances, while keeping the monitor lightweight, and make sure it doesn't depend on other stuff like heavy external databases?
 
 Simple! If the monitor detects that there's no existing 'data manager' running, it starts itself as one and stays available for other monitors to connect to it. Communication between different instances of the monitor is done through Go TCP RPC.
+
+### In-Memory vs Stored
+
+Most data we have can simply be stored in-memory, such as the specific set of SOCKS creds we're using or where in the 'alert cycle' we are. We assume this can stay in-memory due to the presumably high reliability of the datastore itself.
+
+Stored data are things that need to be preserved in-disk in some format. Historical information that lets us create graphs later, SLIs which we can use later to make decisions or view how our services are going overall. This is something I'm not approaching yet, but I', looking into.
 
 
 ## Checking Method
