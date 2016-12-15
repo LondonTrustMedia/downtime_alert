@@ -7,6 +7,18 @@ Configuration is done through the `config.yaml` file. Take a look at `config.exa
 Written by Daniel <doaks@londontrustmedia.com>, so yell at me if you need any help with this.
 
 
+## Databases and Data Stores
+
+So, this program stores two separate types of data between instances:
+
+1. Data that we can throw away with no issue. For example, which set of credentials did we last use for the SOCKS proxy?
+2. Data which must/should be preserved. Mostly, historical instances of downtime, webpage speeds, etc.
+
+These must be preserved across multiple instances of the monitor. As such, this presents a problem: How do we preserve both of these things across multiple instances, while keeping the monitor lightweight and basically to a single binary?
+
+Simple! If the monitor detects that there's no existing 'data manager' running, it starts itself as one and stays available for other monitors to connect to it. Communication between different instances of the monitor is done through Go TCP RPC.
+
+
 ## Checking Method
 
 So let's go into some more detail about how we check whether we should alert for a service.
