@@ -6,26 +6,27 @@ import (
 
 	"time"
 
-	"github.com/LondonTrustMedia/downtime_alert/da"
+	"github.com/LondonTrustMedia/downtime_alert/lib"
+
 	"github.com/docopt/docopt-go"
 	"github.com/tidwall/buntdb"
 )
 
 // FailAndNotify notifies about the failure using whatever methods have been selected and errors out.
-func FailAndNotify(nconfig da.NotifyConfig, serviceName string, errorMessage string) {
+func FailAndNotify(nconfig lib.NotifyConfig, serviceName string, errorMessage string) {
 	message := fmt.Sprintf("== %s is down ==\n%s", serviceName, errorMessage)
 	log.Println(message)
 
 	// send Telstra SMS to the given phone numbers.
 	for _, phoneNumber := range nconfig.DefaultTargets.SmsTelstra {
 		log.Println("Sending SMS notification of failure to", phoneNumber)
-		da.SendSMSTelstra(nconfig.SmsTelstra.Key, nconfig.SmsTelstra.Secret, phoneNumber, message)
+		lib.SendSMSTelstra(nconfig.SmsTelstra.Key, nconfig.SmsTelstra.Secret, phoneNumber, message)
 	}
 
 	// send Sendgrid emails to the given targets.
 	if len(nconfig.DefaultTargets.EmailSendgrid) > 0 {
 		log.Println("Sending email notification of failure to", nconfig.DefaultTargets.EmailSendgrid)
-		da.SendEmailSendgrid(nconfig.EmailSendgrid.APIKey, nconfig.EmailSendgrid.FromName, nconfig.EmailSendgrid.FromAddress, nconfig.DefaultTargets.EmailSendgrid, message)
+		lib.SendEmailSendgrid(nconfig.EmailSendgrid.APIKey, nconfig.EmailSendgrid.FromName, nconfig.EmailSendgrid.FromAddress, nconfig.DefaultTargets.EmailSendgrid, message)
 	}
 }
 
@@ -51,7 +52,7 @@ Options:
 		log.Println("Trying services")
 
 		// load config
-		config, err := da.LoadConfig(arguments["--config"].(string))
+		config, err := lib.LoadConfig(arguments["--config"].(string))
 		if err != nil {
 			log.Fatal("Could not load config file: %s", err.Error())
 		}
@@ -67,25 +68,25 @@ Options:
 		for name, mconfig := range config.Services.Socks5 {
 			// require two failures in a row to report it, to prevent notification on momentary net glitches
 			var failure bool
-			err = da.CheckSocks5(mconfig)
+			err = lib.CheckSocks5(mconfig)
 			if err != nil {
 				// wait for momentary net glitches to pass
 				time.Sleep(config.RecheckDelayDuration)
-				err = da.CheckSocks5(mconfig)
+				err = lib.CheckSocks5(mconfig)
 				if err != nil {
 					failure = true
 				}
 			}
 
 			if failure {
-				da.MarkDown(db, "socks5", name)
+				lib.MarkDown(db, "socks5", name)
 
 				// if we should alert the customer, go yell at them
-				if da.ShouldAlertDowntime(db, config.Ongoing, "socks5", name) {
+				if lib.ShouldAlertDowntime(db, config.Ongoing, "socks5", name) {
 					FailAndNotify(config.Notify, name, fmt.Sprintf("Host: %s\nError: %s", mconfig.Host, err.Error()))
 				}
 			} else {
-				da.MarkUp(db, "socks5", name)
+				lib.MarkUp(db, "socks5", name)
 			}
 		}
 
@@ -94,25 +95,25 @@ Options:
 			// require two failures in a row to report it, to prevent notification on momentary net glitches
 			var failure bool
 
-			err = da.CheckWebpage(mconfig)
+			err = lib.CheckWebpage(mconfig)
 			if err != nil {
 				// wait for momentary net glitches to pass
 				time.Sleep(config.RecheckDelayDuration)
-				err = da.CheckWebpage(mconfig)
+				err = lib.CheckWebpage(mconfig)
 				if err != nil {
 					failure = true
 				}
 			}
 
 			if failure {
-				da.MarkDown(db, "webpage", name)
+				lib.MarkDown(db, "webpage", name)
 
 				// if we should alert the customer, go yell at them
-				if da.ShouldAlertDowntime(db, config.Ongoing, "webpage", name) {
+				if lib.ShouldAlertDowntime(db, config.Ongoing, "webpage", name) {
 					FailAndNotify(config.Notify, name, fmt.Sprintf("URL: %s\nStatus: %s", mconfig.URL, err.Error()))
 				}
 			} else {
-				da.MarkUp(db, "webpage", name)
+				lib.MarkUp(db, "webpage", name)
 			}
 		}
 	}

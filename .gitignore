@@ -96,6 +96,7 @@ _testmain.go
 
 ### StatusMonitor ###
 /config.yaml
+/config-test*
 /compile.sh
 /servicemonitor
 /downtimealert
