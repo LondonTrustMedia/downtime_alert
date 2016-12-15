@@ -12,7 +12,7 @@ Written by Daniel <doaks@londontrustmedia.com>, so yell at me if you need any he
 So, this program stores two separate types of data between instances:
 
 1. Data that we can throw away with no issue. For example, which set of credentials did we last use for the SOCKS proxy?
-2. Data which must/should be preserved. Mostly, historical instances of downtime, webpage speeds, etc.
+2. Data which must/should be preserved. Mostly, historical instances of downtime, webpage speeds, etc. SLIs which we can use later to make decisions or view how our services are going overall.
 
 These must be preserved across multiple instances of the monitor. As such, this presents a problem: How do we preserve both of these things across multiple instances, while keeping the monitor lightweight and basically to a single binary?
 
