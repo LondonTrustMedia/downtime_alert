@@ -51,7 +51,7 @@ func MarkUp(db *buntdb.DB, section string, name string) {
 }
 
 // ShouldAlertDowntime returns true if the alerter should send an alert for the given service.
-func ShouldAlertDowntime(db *buntdb.DB, config OngoingConfig, section string, name string) bool {
+func ShouldAlertDowntime(db *buntdb.DB, config OngoingConfig, section string, name string, failsBeforeAlert int) bool {
 	var shouldAlert bool
 
 	downtimeCountKey := fmt.Sprintf(keyDowntimeCount, section, name)
@@ -72,8 +72,6 @@ func ShouldAlertDowntime(db *buntdb.DB, config OngoingConfig, section string, na
 			i, err := strconv.ParseInt(val, 10, 64)
 			if err == nil {
 				lastAlerted = time.Unix(i, 0)
-			} else {
-				shouldAlert = true
 			}
 
 			// parse ongoing delay
@@ -83,7 +81,7 @@ func ShouldAlertDowntime(db *buntdb.DB, config OngoingConfig, section string, na
 		}
 
 		// see whether to alert, based on options
-		if downtimeCounts <= config.InitialMaxAlerts {
+		if downtimeCounts <= failsBeforeAlert+config.InitialMaxAlerts {
 			shouldAlert = true
 		} else if !shouldAlert && time.Now().After(lastAlerted.Add(ongoingDelay)) {
 			shouldAlert = true

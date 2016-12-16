@@ -13,11 +13,11 @@ import (
 )
 
 // CheckSocks5 checks the given SOCKS5 proxy and returns an error if it doesn't work.
-func CheckSocks5(config Socks5Config) error {
+func CheckSocks5(config Socks5Config, credsToUse int) error {
 	log.Println("Checking SOCKS5 proxy", config.Host)
 
 	// assemble socks5 url
-	userpass := url.UserPassword(config.Username, config.Password)
+	userpass := url.UserPassword(config.Credentials[credsToUse].Username, config.Credentials[credsToUse].Password)
 	socksURL := url.URL{
 		Scheme: "socks5",
 		User:   userpass,

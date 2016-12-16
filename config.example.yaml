@@ -67,9 +67,14 @@ services:
             host: proxy.example.com
             port: 1080
 
-            # credentials to access the proxy
-            username: x1234567
-            password: qwertyuiop
+            # credentials to access the proxy. if there are more than one set, we run through them one-by-one on each launch.
+            credentials:
+                -
+                    username: x1234567
+                    password: qwertyuiop
+                -
+                    username: x7654321
+                    password: poiuytrewq
 
             # domain to test connections with
             test-domain: example.com

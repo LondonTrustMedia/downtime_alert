@@ -19,7 +19,7 @@ Simple! If the monitor detects that there's no existing 'data manager' running, 
 
 Most data we have can simply be stored in-memory, such as the specific set of SOCKS creds we're using or where in the 'alert cycle' we are. We assume this can stay in-memory due to the presumably high reliability of the datastore itself.
 
-Stored data are things that need to be preserved in-disk in some format. Historical information that lets us create graphs later, SLIs which we can use later to make decisions or view how our services are going overall. This is something I'm not approaching yet, but I', looking into.
+Stored data are things that need to be preserved in-disk in some format. Historical information that lets us create graphs later, SLIs which we can use later to make decisions or view how our services are going overall. This is something I'm not approaching yet, but I'm looking into.
 
 
 ## Checking Method

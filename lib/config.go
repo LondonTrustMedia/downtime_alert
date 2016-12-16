@@ -52,13 +52,18 @@ type WebpageConfig struct {
 	URL string
 }
 
+// UserPassCredentialConfig holds credentials for typical username+password services.
+type UserPassCredentialConfig struct {
+	Username string
+	Password string
+}
+
 // Socks5Config holds the monitor configuration for a SOCKS5 proxy.
 type Socks5Config struct {
-	Host       string
-	Port       int
-	Username   string
-	Password   string
-	TestDomain string `yaml:"test-domain"`
+	Host        string
+	Port        int
+	Credentials []UserPassCredentialConfig
+	TestDomain  string `yaml:"test-domain"`
 }
 
 // Config holds the entire configuration for the service monitor.

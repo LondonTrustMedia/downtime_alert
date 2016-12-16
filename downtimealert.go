@@ -68,21 +68,20 @@ Options:
 		for name, mconfig := range config.Services.Socks5 {
 			// require two failures in a row to report it, to prevent notification on momentary net glitches
 			var failure bool
-			err = lib.CheckSocks5(mconfig)
+
+			// get which set of creds to use
+			credsToUse := lib.GetCounter(db, fmt.Sprintf("socks5-%s-%d-credentials", mconfig.Host, mconfig.Port), len(mconfig.Credentials)-1)
+
+			err = lib.CheckSocks5(mconfig, credsToUse)
 			if err != nil {
-				// wait for momentary net glitches to pass
-				time.Sleep(config.RecheckDelayDuration)
-				err = lib.CheckSocks5(mconfig)
-				if err != nil {
-					failure = true
-				}
+				failure = true
 			}
 
 			if failure {
 				lib.MarkDown(db, "socks5", name)
 
 				// if we should alert the customer, go yell at them
-				if lib.ShouldAlertDowntime(db, config.Ongoing, "socks5", name) {
+				if lib.ShouldAlertDowntime(db, config.Ongoing, "socks5", name, 3) {
 					FailAndNotify(config.Notify, name, fmt.Sprintf("Host: %s\nError: %s", mconfig.Host, err.Error()))
 				}
 			} else {
@@ -109,7 +108,7 @@ Options:
 				lib.MarkDown(db, "webpage", name)
 
 				// if we should alert the customer, go yell at them
-				if lib.ShouldAlertDowntime(db, config.Ongoing, "webpage", name) {
+				if lib.ShouldAlertDowntime(db, config.Ongoing, "webpage", name, 2) {
 					FailAndNotify(config.Notify, name, fmt.Sprintf("URL: %s\nStatus: %s", mconfig.URL, err.Error()))
 				}
 			} else {
