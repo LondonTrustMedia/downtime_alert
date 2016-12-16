@@ -31,7 +31,6 @@ func FailAndNotify(nconfig lib.NotifyConfig, serviceName string, errorMessage st
 }
 
 func main() {
-	version := "downtimealert 0.1.0"
 	usage := `downtimealert.
 downtimealert connects to and monitors services, and reports outages.
 
@@ -46,7 +45,7 @@ Options:
 	-h --help    Show this screen.
 	--version    Show version.`
 
-	arguments, _ := docopt.Parse(usage, nil, true, version, false)
+	arguments, _ := docopt.Parse(usage, nil, true, fmt.Sprintf("downtimealert v%s", lib.SemVer), false)
 
 	if arguments["try"].(bool) {
 		log.Println("Trying services")
@@ -54,7 +53,7 @@ Options:
 		// load config
 		config, err := lib.LoadConfig(arguments["--config"].(string))
 		if err != nil {
-			log.Fatal("Could not load config file: %s", err.Error())
+			log.Fatal("Could not load config file:", err.Error())
 		}
 
 		// load datastore
