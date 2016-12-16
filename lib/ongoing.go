@@ -81,7 +81,7 @@ func ShouldAlertDowntime(db *buntdb.DB, config OngoingConfig, section string, na
 		}
 
 		// see whether to alert, based on options
-		if downtimeCounts <= failsBeforeAlert+config.InitialMaxAlerts {
+		if failsBeforeAlert <= downtimeCounts && downtimeCounts <= failsBeforeAlert+config.InitialMaxAlerts {
 			shouldAlert = true
 		} else if !shouldAlert && time.Now().After(lastAlerted.Add(ongoingDelay)) {
 			shouldAlert = true
