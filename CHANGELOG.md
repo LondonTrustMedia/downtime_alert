@@ -4,6 +4,20 @@ All notable changes to downtimealert will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/). For the purposes of versioning, we consider the "public API" to refer to the configuration files and CLI interface.
 
 
+## Unreleased
+New version of downtimealert.
+
+### Security
+
+### Added
+
+### Changed
+
+### Removed
+
+### Fixed
+
+
 ## 0.1.0
 Initial version of downtimealert.
 

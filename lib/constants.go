@@ -2,5 +2,5 @@ package lib
 
 var (
 	// SemVer is the semantic version of downtimealert.
-	SemVer = "0.1.0"
+	SemVer = "0.2.0-unreleased"
 )
