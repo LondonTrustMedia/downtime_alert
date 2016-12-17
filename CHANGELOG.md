@@ -10,6 +10,8 @@ New version of downtimealert.
 ### Security
 
 ### Added
+* Added ability to have multiple SOCKS passwords, and automatically cycle through them.
+* Added ability to ensure only one copy of downtimealert exists at a time.
 
 ### Changed
 
