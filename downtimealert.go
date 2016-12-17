@@ -83,6 +83,14 @@ Options:
 			// require two failures in a row to report it, to prevent notification on momentary net glitches
 			var failure bool
 
+			// see whether to check this time 'round
+			countWait := lib.GetCounter(db, fmt.Sprintf("socks5-%s-%d-countwait", mconfig.Host, mconfig.Port), mconfig.WaitBetweenAttempts)
+
+			if countWait != 0 {
+				log.Println("Skipping SOCKS5 check for", mconfig.Host, "this launch")
+				continue
+			}
+
 			// get which set of creds to use
 			credsToUse := lib.GetCounter(db, fmt.Sprintf("socks5-%s-%d-credentials", mconfig.Host, mconfig.Port), len(mconfig.Credentials)-1)
 
@@ -95,7 +103,7 @@ Options:
 				lib.MarkDown(db, "socks5", name)
 
 				// if we should alert the customer, go yell at them
-				if lib.ShouldAlertDowntime(db, config.Ongoing, "socks5", name, 3) {
+				if lib.ShouldAlertDowntime(db, config.Ongoing, "socks5", name, 2) {
 					FailAndNotify(config.Notify, name, fmt.Sprintf("Host: %s\nError: %s", mconfig.Host, err.Error()))
 				}
 			} else {

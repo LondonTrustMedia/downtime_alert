@@ -67,6 +67,10 @@ services:
             host: proxy.example.com
             port: 1080
 
+            # how many launches of downtimealert we should wait between every check that we do.
+            # this is primarily useful when, i.e. cronning it every one minute, in order to slow down login attempts.
+            wait-between-attempts: 5
+
             # credentials to access the proxy. if there are more than one set, we run through them one-by-one on each launch.
             credentials:
                 -
