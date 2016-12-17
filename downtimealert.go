@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
 
 	"time"
 
@@ -10,6 +12,7 @@ import (
 
 	"net"
 
+	"code.cloudfoundry.org/bytefmt"
 	"github.com/docopt/docopt-go"
 	"github.com/tidwall/buntdb"
 )
@@ -52,6 +55,24 @@ Options:
 
 	if arguments["try"].(bool) {
 		log.Println("Trying services")
+
+		byteCount, _ := bytefmt.ToBytes("10M")
+
+		req, _ := http.NewRequest("GET", "http://nl.privateinternetaccess.com:8888/big", nil)
+		req.Header.Add("Range", fmt.Sprintf("bytes=0-%d", byteCount))
+		fmt.Println(req)
+		var client http.Client
+		resp, _ := client.Do(req)
+		fmt.Println(resp)
+		fmt.Println("Downloading 10M")
+		currentTime := time.Now().Unix()
+		body, _ := ioutil.ReadAll(resp.Body)
+		now := time.Now().Unix()
+		fmt.Println(len(body))
+		fmt.Println("Downloaded", "10M", "in", int(now-currentTime), "seconds")
+		fmt.Println(bytefmt.ByteSize(byteCount/uint64(now-currentTime)), "per second")
+
+		return
 
 		// load config
 		config, err := lib.LoadConfig(arguments["--config"].(string))
