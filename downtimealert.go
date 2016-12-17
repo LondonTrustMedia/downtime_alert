@@ -3,13 +3,13 @@ package main
 import (
 	"fmt"
 	"log"
-
-	"time"
+	"net"
+	"net/rpc"
 
 	"github.com/LondonTrustMedia/downtime_alert/lib"
+	"github.com/LondonTrustMedia/downtime_alert/lib/store"
 
 	"github.com/docopt/docopt-go"
-	"github.com/tidwall/buntdb"
 )
 
 // FailAndNotify notifies about the failure using whatever methods have been selected and errors out.
@@ -35,12 +35,14 @@ func main() {
 downtimealert connects to and monitors services, and reports outages.
 
 Usage:
-	downtimealert try [--config=<filename>]
+	downtimealert try [--config=<filename>] [--serve-data-store]
 	downtimealert -h | --help
 	downtimealert --version
 
 Options:
 	--config=<filename>    Use the given config file [default: config.yaml].
+	--serve-data-store     If there isn't an existing one open, stays open to serve
+	                       the data store to other downtimealert instances.
 
 	-h --help    Show this screen.
 	--version    Show version.`
@@ -48,7 +50,6 @@ Options:
 	arguments, _ := docopt.Parse(usage, nil, true, fmt.Sprintf("downtimealert v%s", lib.SemVer), false)
 
 	if arguments["try"].(bool) {
-		log.Println("Trying services")
 
 		// load config
 		config, err := lib.LoadConfig(arguments["--config"].(string))
@@ -56,63 +57,93 @@ Options:
 			log.Fatal("Could not load config file:", err.Error())
 		}
 
-		// load datastore
-		db, err := buntdb.Open(config.Datastore)
+		// start datastore
+		log.Println("Starting data store")
+
+		var openedDataStore bool
+		var servedStore *store.BuntDBStore
+
+		l, e := net.Listen("tcp", config.Datastore.URL)
+		if e == nil {
+			// open datastore
+			servedStore, err = store.NewBuntDBStore(config.Datastore.Path)
+			if err != nil {
+				FailAndNotify(config.Notify, "Datastore", fmt.Sprintf("Couldn't open datastore: %s", err.Error()))
+			}
+
+			// serve datastore
+			server := rpc.NewServer()
+			server.RegisterName("DB", servedStore)
+
+			go server.Accept(l)
+			openedDataStore = true
+		}
+
+		// open rpc
+		// if version is old, kill the old datastore and die
+		conn, err := net.Dial("tcp", config.Datastore.URL)
 		if err != nil {
-			FailAndNotify(config.Notify, "Datastore", fmt.Sprintf("Couldn't open bunt datastore: %s", err.Error()))
-		}
-		defer db.Close()
-
-		// check SOCKS5 proxies
-		for name, mconfig := range config.Services.Socks5 {
-			// require two failures in a row to report it, to prevent notification on momentary net glitches
-			var failure bool
-
-			// get which set of creds to use
-			credsToUse := lib.GetCounter(db, fmt.Sprintf("socks5-%s-%d-credentials", mconfig.Host, mconfig.Port), len(mconfig.Credentials)-1)
-
-			err = lib.CheckSocks5(mconfig, credsToUse)
-			if err != nil {
-				failure = true
-			}
-
-			if failure {
-				lib.MarkDown(db, "socks5", name)
-
-				// if we should alert the customer, go yell at them
-				if lib.ShouldAlertDowntime(db, config.Ongoing, "socks5", name, 3) {
-					FailAndNotify(config.Notify, name, fmt.Sprintf("Host: %s\nError: %s", mconfig.Host, err.Error()))
-				}
-			} else {
-				lib.MarkUp(db, "socks5", name)
-			}
+			FailAndNotify(config.Notify, "Datastore", fmt.Sprintf("Couldn't connect to datastore: %s", err.Error()))
 		}
 
-		// check web pages
-		for name, mconfig := range config.Services.Webpage {
-			// require two failures in a row to report it, to prevent notification on momentary net glitches
-			var failure bool
+		db := &store.RPCStore{Client: rpc.NewClient(conn)}
 
-			err = lib.CheckWebpage(mconfig)
-			if err != nil {
-				// wait for momentary net glitches to pass
-				time.Sleep(config.RecheckDelayDuration)
-				err = lib.CheckWebpage(mconfig)
-				if err != nil {
-					failure = true
-				}
-			}
+		fmt.Println(db.Version())
 
-			if failure {
-				lib.MarkDown(db, "webpage", name)
+		return
 
-				// if we should alert the customer, go yell at them
-				if lib.ShouldAlertDowntime(db, config.Ongoing, "webpage", name, 2) {
-					FailAndNotify(config.Notify, name, fmt.Sprintf("URL: %s\nStatus: %s", mconfig.URL, err.Error()))
-				}
-			} else {
-				lib.MarkUp(db, "webpage", name)
-			}
-		}
+		log.Println("Trying services", openedDataStore)
+
+		// // check SOCKS5 proxies
+		// for name, mconfig := range config.Services.Socks5 {
+		// 	// require two failures in a row to report it, to prevent notification on momentary net glitches
+		// 	var failure bool
+
+		// 	// get which set of creds to use
+		// 	credsToUse := lib.GetCounter(db, fmt.Sprintf("socks5-%s-%d-credentials", mconfig.Host, mconfig.Port), len(mconfig.Credentials)-1)
+
+		// 	err = lib.CheckSocks5(mconfig, credsToUse)
+		// 	if err != nil {
+		// 		failure = true
+		// 	}
+
+		// 	if failure {
+		// 		lib.MarkDown(db, "socks5", name)
+
+		// 		// if we should alert the customer, go yell at them
+		// 		if lib.ShouldAlertDowntime(db, config.Ongoing, "socks5", name, 3) {
+		// 			FailAndNotify(config.Notify, name, fmt.Sprintf("Host: %s\nError: %s", mconfig.Host, err.Error()))
+		// 		}
+		// 	} else {
+		// 		lib.MarkUp(db, "socks5", name)
+		// 	}
+		// }
+
+		// // check web pages
+		// for name, mconfig := range config.Services.Webpage {
+		// 	// require two failures in a row to report it, to prevent notification on momentary net glitches
+		// 	var failure bool
+
+		// 	err = lib.CheckWebpage(mconfig)
+		// 	if err != nil {
+		// 		// wait for momentary net glitches to pass
+		// 		time.Sleep(config.RecheckDelayDuration)
+		// 		err = lib.CheckWebpage(mconfig)
+		// 		if err != nil {
+		// 			failure = true
+		// 		}
+		// 	}
+
+		// 	if failure {
+		// 		lib.MarkDown(db, "webpage", name)
+
+		// 		// if we should alert the customer, go yell at them
+		// 		if lib.ShouldAlertDowntime(db, config.Ongoing, "webpage", name, 2) {
+		// 			FailAndNotify(config.Notify, name, fmt.Sprintf("URL: %s\nStatus: %s", mconfig.URL, err.Error()))
+		// 		}
+		// 	} else {
+		// 		lib.MarkUp(db, "webpage", name)
+		// 	}
+		// }
 	}
 }

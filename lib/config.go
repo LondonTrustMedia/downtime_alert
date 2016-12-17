@@ -68,7 +68,10 @@ type Socks5Config struct {
 
 // Config holds the entire configuration for the service monitor.
 type Config struct {
-	Datastore string
+	Datastore struct {
+		Path string
+		URL  string
+	}
 
 	RecheckDelay string `yaml:"recheck-delay"`
 
