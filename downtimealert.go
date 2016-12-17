@@ -8,6 +8,8 @@ import (
 
 	"github.com/LondonTrustMedia/downtime_alert/lib"
 
+	"net"
+
 	"github.com/docopt/docopt-go"
 	"github.com/tidwall/buntdb"
 )
@@ -35,12 +37,13 @@ func main() {
 downtimealert connects to and monitors services, and reports outages.
 
 Usage:
-	downtimealert try [--config=<filename>]
+	downtimealert try [--config=<filename>] [--onecopy]
 	downtimealert -h | --help
 	downtimealert --version
 
 Options:
 	--config=<filename>    Use the given config file [default: config.yaml].
+	--onecopy              Ensure that only one copy is running at a time.
 
 	-h --help    Show this screen.
 	--version    Show version.`
@@ -54,6 +57,18 @@ Options:
 		config, err := lib.LoadConfig(arguments["--config"].(string))
 		if err != nil {
 			log.Fatal("Could not load config file:", err.Error())
+		}
+
+		// ensure only one copy of this alerter exists
+		if arguments["--onecopy"].(bool) {
+			onecopy, err := net.Listen("tcp", config.Onecopy)
+			if err != nil {
+				// a downtimealert is already running, so exit
+				log.Println("Downtime alerter already running, exiting")
+				return
+			}
+			log.Println("Opened onecopy listener at", config.Onecopy)
+			defer onecopy.Close()
 		}
 
 		// load datastore

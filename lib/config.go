@@ -70,6 +70,8 @@ type Socks5Config struct {
 type Config struct {
 	Datastore string
 
+	Onecopy string
+
 	RecheckDelay string `yaml:"recheck-delay"`
 
 	RecheckDelayDuration time.Duration
