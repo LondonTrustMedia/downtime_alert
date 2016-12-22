@@ -65,6 +65,7 @@ func ShouldAlertDowntime(db *buntdb.DB, config OngoingConfig, section string, na
 		}
 
 		var lastAlerted time.Time
+		var lastAlertedPopulated bool
 		var ongoingDelay time.Duration
 		val, err = tx.Get(downtimeLastNotificationKey)
 		if err == nil {
@@ -72,18 +73,17 @@ func ShouldAlertDowntime(db *buntdb.DB, config OngoingConfig, section string, na
 			i, err := strconv.ParseInt(val, 10, 64)
 			if err == nil {
 				lastAlerted = time.Unix(i, 0)
+				lastAlertedPopulated = true
 			}
 
 			// parse ongoing delay
 			ongoingDelay, _ = time.ParseDuration(config.OngoingDelay)
-		} else {
-			shouldAlert = true
 		}
 
 		// see whether to alert, based on options
 		if failsBeforeAlert <= downtimeCounts && downtimeCounts <= failsBeforeAlert+config.InitialMaxAlerts {
 			shouldAlert = true
-		} else if !shouldAlert && time.Now().After(lastAlerted.Add(ongoingDelay)) {
+		} else if !shouldAlert && lastAlertedPopulated && time.Now().After(lastAlerted.Add(ongoingDelay)) {
 			shouldAlert = true
 		}
 
