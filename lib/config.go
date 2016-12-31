@@ -58,6 +58,13 @@ type UserPassCredentialConfig struct {
 	Password string
 }
 
+// TestDownloadConfig is the info for a test download.
+type TestDownloadConfig struct {
+	URL                       string
+	MaxSizeToDL               string `yaml:"max-size-to-dl"`
+	MinDownloadSpeedPerSecond string `yaml:"min-download-speed-per-second"`
+}
+
 // Socks5Config holds the monitor configuration for a SOCKS5 proxy.
 type Socks5Config struct {
 	Host                string
@@ -65,6 +72,7 @@ type Socks5Config struct {
 	WaitBetweenAttempts int `yaml:"wait-between-attempts"`
 	Credentials         []UserPassCredentialConfig
 	TestDomain          string `yaml:"test-domain"`
+	TestDownload        TestDownloadConfig
 }
 
 // Config holds the entire configuration for the service monitor.

@@ -70,7 +70,7 @@ Options:
 		now := time.Now().Unix()
 		fmt.Println(len(body))
 		fmt.Println("Downloaded", "10M", "in", int(now-currentTime), "seconds")
-		fmt.Println(bytefmt.ByteSize(byteCount/uint64(now-currentTime)), "per second")
+		fmt.Println(fmt.Sprintf("%sB/s", bytefmt.ByteSize(byteCount/uint64(now-currentTime))))
 
 		return
 
