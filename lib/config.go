@@ -6,6 +6,7 @@ import (
 
 	"time"
 
+	"code.cloudfoundry.org/bytefmt"
 	"gopkg.in/yaml.v2"
 )
 
@@ -60,9 +61,18 @@ type UserPassCredentialConfig struct {
 
 // TestDownloadConfig is the info for a test download.
 type TestDownloadConfig struct {
-	URL                       string
-	MaxSizeToDL               string `yaml:"max-size-to-dl"`
-	MinDownloadSpeedPerSecond string `yaml:"min-download-speed-per-second"`
+	URL               string
+	MaxSizeToDLString string `yaml:"max-size-to-dl"`
+	MaxBytesToDL      uint64
+	SLO               struct {
+		HistoryRetainedString   string `yaml:"history-retained"`
+		HistoryRetained         time.Duration
+		MaxFailuresInARow       int     `yaml:"max-failures-in-a-row"`
+		UptimeTarget            float64 `yaml:"uptime-target"`
+		MinSpeedPerSecondString string  `yaml:"min-speed-per-second"`
+		MinBytesPerSecond       uint64
+		SpeedTarget             float64 `yaml:"speed-target"`
+	}
 }
 
 // Socks5Config holds the monitor configuration for a SOCKS5 proxy.
@@ -71,8 +81,7 @@ type Socks5Config struct {
 	Port                int
 	WaitBetweenAttempts int `yaml:"wait-between-attempts"`
 	Credentials         []UserPassCredentialConfig
-	TestDomain          string `yaml:"test-domain"`
-	TestDownload        TestDownloadConfig
+	TestDownload        TestDownloadConfig `yaml:"test-download"`
 }
 
 // Config holds the entire configuration for the service monitor.
@@ -109,10 +118,35 @@ func LoadConfig(filename string) (*Config, error) {
 		return nil, err
 	}
 
-	// gget RecheckDelayDuration
+	// get RecheckDelayDuration
 	config.RecheckDelayDuration, err = time.ParseDuration(config.RecheckDelay)
 	if err != nil {
 		return nil, fmt.Errorf("Could not parse RecheckDelay: %s", err.Error())
+	}
+
+	// calculate TestDownloadConfig stuff
+	for name, info := range config.Services.Socks5 {
+		info.TestDownload.SLO.HistoryRetained, err = time.ParseDuration(info.TestDownload.SLO.HistoryRetainedString)
+		if err != nil {
+			return nil, fmt.Errorf("Could not parse history-retained in SOCKS5 %s: %s", name, err.Error())
+		}
+
+		if info.TestDownload.MaxSizeToDLString != "" {
+			info.TestDownload.MaxBytesToDL, err = bytefmt.ToBytes(info.TestDownload.MaxSizeToDLString)
+			if err != nil {
+				return nil, fmt.Errorf("Could not parse max-size-to-dl in SOCKS5 %s: %s", name, err.Error())
+			}
+		}
+
+		if info.TestDownload.SLO.MinSpeedPerSecondString != "" {
+			info.TestDownload.SLO.MinBytesPerSecond, err = bytefmt.ToBytes(info.TestDownload.SLO.MinSpeedPerSecondString)
+			if err != nil {
+				return nil, fmt.Errorf("Could not parse max-speed-per-second in SOCKS5 %s: %s", name, err.Error())
+			}
+		}
+
+		// save new info
+		config.Services.Socks5[name] = info
 	}
 
 	return &config, nil

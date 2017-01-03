@@ -2,19 +2,22 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
-	"net/http"
+	"math/rand"
 
 	"time"
 
 	"github.com/LondonTrustMedia/downtime_alert/lib"
+	"github.com/LondonTrustMedia/downtime_alert/lib/slo"
 
 	"net"
 
-	"code.cloudfoundry.org/bytefmt"
 	"github.com/docopt/docopt-go"
 	"github.com/tidwall/buntdb"
+)
+
+const (
+	keySloTracker = "slo-tracker %s %s"
 )
 
 // FailAndNotify notifies about the failure using whatever methods have been selected and errors out.
@@ -33,6 +36,21 @@ func FailAndNotify(nconfig lib.NotifyConfig, serviceName string, errorMessage st
 		log.Println("Sending email notification of failure to", nconfig.DefaultTargets.EmailSendgrid)
 		lib.SendEmailSendgrid(nconfig.EmailSendgrid.APIKey, nconfig.EmailSendgrid.FromName, nconfig.EmailSendgrid.FromAddress, nconfig.DefaultTargets.EmailSendgrid, message)
 	}
+}
+
+// LoadFromDatastore returns a Tracker instance from the given datastore.
+func LoadFromDatastore(db *buntdb.DB, section, name string) (*slo.Tracker, error) {
+	sloTrackerKey := fmt.Sprintf(keySloTracker, section, name)
+	var tracker *slo.Tracker
+	err := db.Update(func(tx *buntdb.Tx) error {
+		val, err := tx.Get(sloTrackerKey)
+		if err != nil || len(val) < 1 {
+			return err
+		}
+		tracker, err = slo.LoadFromString(val)
+		return err
+	})
+	return tracker, err
 }
 
 func main() {
@@ -56,28 +74,10 @@ Options:
 	if arguments["try"].(bool) {
 		log.Println("Trying services")
 
-		byteCount, _ := bytefmt.ToBytes("10M")
-
-		req, _ := http.NewRequest("GET", "http://nl.privateinternetaccess.com:8888/big", nil)
-		req.Header.Add("Range", fmt.Sprintf("bytes=0-%d", byteCount))
-		fmt.Println(req)
-		var client http.Client
-		resp, _ := client.Do(req)
-		fmt.Println(resp)
-		fmt.Println("Downloading 10M")
-		currentTime := time.Now().Unix()
-		body, _ := ioutil.ReadAll(resp.Body)
-		now := time.Now().Unix()
-		fmt.Println(len(body))
-		fmt.Println("Downloaded", "10M", "in", int(now-currentTime), "seconds")
-		fmt.Println(fmt.Sprintf("%sB/s", bytefmt.ByteSize(byteCount/uint64(now-currentTime))))
-
-		return
-
 		// load config
 		config, err := lib.LoadConfig(arguments["--config"].(string))
 		if err != nil {
-			log.Fatal("Could not load config file:", err.Error())
+			log.Fatal("Could not load config file: ", err.Error())
 		}
 
 		// ensure only one copy of this alerter exists
@@ -99,12 +99,12 @@ Options:
 		}
 		defer db.Close()
 
+		// seed random numbers (used to uniquify URLs to bypass caches)
+		rand.Seed(time.Now().UnixNano())
+
 		// check SOCKS5 proxies
 		for name, mconfig := range config.Services.Socks5 {
-			// require two failures in a row to report it, to prevent notification on momentary net glitches
-			var failure bool
-
-			// see whether to check this time 'round
+			// see whether to skip check on this launch
 			countWait := lib.GetCounter(db, fmt.Sprintf("socks5-%s-%d-countwait", mconfig.Host, mconfig.Port), mconfig.WaitBetweenAttempts)
 
 			if countWait != 0 {
@@ -115,21 +115,45 @@ Options:
 			// get which set of creds to use
 			credsToUse := lib.GetCounter(db, fmt.Sprintf("socks5-%s-%d-credentials", mconfig.Host, mconfig.Port), len(mconfig.Credentials)-1)
 
-			err = lib.CheckSocks5(mconfig, credsToUse)
+			// confirm that we have our SLO tracker
+			tracker, err := LoadFromDatastore(db, "socks5", name)
 			if err != nil {
-				failure = true
+				tracker = slo.NewTracker()
 			}
 
-			if failure {
-				lib.MarkDown(db, "socks5", name)
-
-				// if we should alert the customer, go yell at them
-				if lib.ShouldAlertDowntime(db, config.Ongoing, "socks5", name, 2) {
-					FailAndNotify(config.Notify, name, fmt.Sprintf("Host: %s\nError: %s", mconfig.Host, err.Error()))
-				}
-			} else {
-				lib.MarkUp(db, "socks5", name)
+			// check!
+			err = lib.CheckSocks5(tracker, mconfig, credsToUse)
+			if err != nil {
+				tracker.AddFailure(time.Now(), err.Error())
 			}
+
+			// remove old history
+			tracker.CullHistory(time.Now().Add(mconfig.TestDownload.SLO.HistoryRetained * -1))
+
+			// check specific failures
+			//TODO(dan): Don't alert 3000 times for the same issue, implement failure pattern detection and hiding and all.
+			failCount, failMessages := tracker.ConsecutiveFailures()
+			if failCount >= mconfig.TestDownload.SLO.MaxFailuresInARow {
+				FailAndNotify(config.Notify, name, fmt.Sprintf("SOCKS5 %s\nFailed %d times in a row:\n%s", name, failCount, failMessages))
+				continue
+			}
+
+			if tracker.TotalTestsPerformed() >= 5 && !tracker.UptimeIsAbove(mconfig.TestDownload.SLO.UptimeTarget) {
+				FailAndNotify(config.Notify, name, fmt.Sprintf("SOCKS5 %s\nUptime is lower than %f", name, mconfig.TestDownload.SLO.UptimeTarget))
+				continue
+			}
+
+			if tracker.SuccessfulTestsPerformed() >= 5 && !tracker.SpeedIsAbove(mconfig.TestDownload.SLO.MinBytesPerSecond, mconfig.TestDownload.SLO.SpeedTarget) {
+				FailAndNotify(config.Notify, name, fmt.Sprintf("SOCKS5 %s\nProxy is very slow", name))
+				continue
+			}
+
+			// save tracker
+			sloTrackerKey := fmt.Sprintf(keySloTracker, "socks5", name)
+			db.Update(func(tx *buntdb.Tx) error {
+				tx.Set(sloTrackerKey, tracker.String(), nil)
+				return nil
+			})
 		}
 
 		// check web pages

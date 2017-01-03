@@ -2,18 +2,25 @@ package lib
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net"
 	"net/url"
 	"strconv"
+	"time"
 
+	"net/http"
+
+	"strings"
+
+	"code.cloudfoundry.org/bytefmt"
 	"github.com/DanielOaks/proxyclient"
+	"github.com/LondonTrustMedia/downtime_alert/lib/slo"
 )
 
 // CheckSocks5 checks the given SOCKS5 proxy and returns an error if it doesn't work.
-func CheckSocks5(config Socks5Config, credsToUse int) error {
+func CheckSocks5(tracker *slo.Tracker, config Socks5Config, credsToUse int) error {
 	log.Println("Checking SOCKS5 proxy", config.Host)
 
 	// assemble socks5 url
@@ -30,17 +37,56 @@ func CheckSocks5(config Socks5Config, credsToUse int) error {
 		return err
 	}
 
-	c, err := p.Dial("tcp", net.JoinHostPort(config.TestDomain, "80"))
+	urlString := config.TestDownload.URL
+	if strings.Contains(urlString, "{{random-int}}") {
+		urlString = strings.Replace(urlString, "{{random-int}}", strconv.Itoa(rand.Int()), -1)
+	}
+	req, err := http.NewRequest("GET", urlString, nil)
+	if err != nil {
+		return err
+	}
+	if config.TestDownload.MaxBytesToDL > 0 {
+		req.Header.Add("Range", fmt.Sprintf("bytes=0-%d", config.TestDownload.MaxBytesToDL))
+	}
+
+	u, err := url.Parse(config.TestDownload.URL)
 	if err != nil {
 		return err
 	}
 
-	io.WriteString(c, fmt.Sprintf("GET / HTTP/1.0\r\nHOST:%s\r\n\r\n", config.TestDomain))
-	_, err = ioutil.ReadAll(c)
+	var host string
+	if strings.Contains(u.Host, ":") {
+		// bleh
+		host = u.Host
+	} else {
+		host = net.JoinHostPort(u.Host, "80")
+	}
+
+	conn, err := p.Dial("tcp", host)
 	if err != nil {
 		return err
 	}
 
-	// we don't care about whatever http errors we get, just that we actually get a response
+	// write our actual HTTP request
+	req.Write(conn)
+
+	// download
+	downloadStartedTime := time.Now()
+	defer conn.Close()
+	body, err := ioutil.ReadAll(conn)
+	if err != nil {
+		return err
+	}
+	downloadEndedTime := time.Now()
+
+	downloadElapsedSeconds := downloadEndedTime.Unix() - downloadStartedTime.Unix()
+	downloadSizeBytes := uint64(len(body))
+	downloadSpeedBytesPerSecond := downloadSizeBytes / uint64(downloadElapsedSeconds)
+
+	log.Println("SOCKS5", config.Host, "- Downloaded", bytefmt.ByteSize(downloadSizeBytes), "in", downloadElapsedSeconds, "seconds --", fmt.Sprintf("%s/s", bytefmt.ByteSize(downloadSpeedBytesPerSecond)))
+
+	tracker.AddDownload(downloadStartedTime, downloadSpeedBytesPerSecond)
+
+	// no errors!
 	return nil
 }

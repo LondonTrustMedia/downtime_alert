@@ -80,5 +80,34 @@ services:
                     username: x7654321
                     password: poiuytrewq
 
-            # domain to test connections with
-            test-domain: example.com
+            # page to download to test connections
+            test-download:
+                # url to download
+                # {{random-int}} will be replaced with a random integer if it exists, intended to bypass caches
+                url: http://www.example.com/index.html?test={{random-int}}
+
+                # max size to download
+                max-size-to-dl: 2Mb
+
+                # service level objectives we want to achieve, and respectively those that we alert on
+                slo:
+                    # how long to retain history (to calculate targets from)
+                    # like:  5h12m37s
+                    history-retained: 30m
+
+                    # how many failures in a row before we start alerting people
+                    max-failures-in-a-row: 3
+
+                    # what uptime do we expect.
+                    # covers auth failures, just not being able to access it, etc.
+                    # if they can get to d/ling (below), it's not an uptime failure.
+                    # 0.25 == 25%, etc
+                    # SOCKS5 proxy runs hot, so we can expect a reasonable amount of failures.
+                    uptime-target: 0.5
+
+                    # minimum speed per second we expect
+                    min-speed-per-second: 500Kb
+
+                    # how many of our tests do we expect to be over the min speed
+                    # 0.25 == 25%, etc
+                    speed-target: 0.7

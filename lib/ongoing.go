@@ -15,7 +15,7 @@ const (
 )
 
 // MarkDown marks the given service as being down in the datastore.
-func MarkDown(db *buntdb.DB, section string, name string) {
+func MarkDown(db *buntdb.DB, section, name string) {
 	downtimeCountKey := fmt.Sprintf(keyDowntimeCount, section, name)
 	err := db.Update(func(tx *buntdb.Tx) error {
 		var lastCount int
@@ -36,7 +36,7 @@ func MarkDown(db *buntdb.DB, section string, name string) {
 }
 
 // MarkUp marks the given service as being up in the datastore.
-func MarkUp(db *buntdb.DB, section string, name string) {
+func MarkUp(db *buntdb.DB, section, name string) {
 	downtimeCountKey := fmt.Sprintf(keyDowntimeCount, section, name)
 	downtimeLastNotificationKey := fmt.Sprintf(keyDowntimeLastNotification, section, name)
 	err := db.Update(func(tx *buntdb.Tx) error {
@@ -51,7 +51,7 @@ func MarkUp(db *buntdb.DB, section string, name string) {
 }
 
 // ShouldAlertDowntime returns true if the alerter should send an alert for the given service.
-func ShouldAlertDowntime(db *buntdb.DB, config OngoingConfig, section string, name string, failsBeforeAlert int) bool {
+func ShouldAlertDowntime(db *buntdb.DB, config OngoingConfig, section, name string, failsBeforeAlert int) bool {
 	var shouldAlert bool
 
 	downtimeCountKey := fmt.Sprintf(keyDowntimeCount, section, name)
