@@ -12,6 +12,7 @@ import (
 
 	"net"
 
+	"code.cloudfoundry.org/bytefmt"
 	"github.com/docopt/docopt-go"
 	"github.com/tidwall/buntdb"
 )
@@ -132,19 +133,20 @@ Options:
 
 			// check specific failures
 			//TODO(dan): Don't alert 3000 times for the same issue, implement failure pattern detection and hiding and all.
+			// We'll likely integrate this in as a "ShouldAlert" function into the tracker itself.
 			failCount, failMessages := tracker.ConsecutiveFailures()
 			if failCount >= mconfig.TestDownload.SLO.MaxFailuresInARow {
-				FailAndNotify(config.Notify, name, fmt.Sprintf("SOCKS5 %s\nFailed %d times in a row:\n%s", name, failCount, failMessages))
+				FailAndNotify(config.Notify, name, fmt.Sprintf("Failed %d times in a row:\n%s", failCount, failMessages))
 				continue
 			}
 
-			if tracker.TotalTestsPerformed() >= 5 && !tracker.UptimeIsAbove(mconfig.TestDownload.SLO.UptimeTarget) {
-				FailAndNotify(config.Notify, name, fmt.Sprintf("SOCKS5 %s\nUptime is lower than %f", name, mconfig.TestDownload.SLO.UptimeTarget))
+			if tracker.TotalTestsPerformed() >= 3 && !tracker.UptimeIsAbove(mconfig.TestDownload.SLO.UptimeTarget) {
+				FailAndNotify(config.Notify, name, fmt.Sprintf("Uptime is lower than %f", mconfig.TestDownload.SLO.UptimeTarget))
 				continue
 			}
 
-			if tracker.SuccessfulTestsPerformed() >= 5 && !tracker.SpeedIsAbove(mconfig.TestDownload.SLO.MinBytesPerSecond, mconfig.TestDownload.SLO.SpeedTarget) {
-				FailAndNotify(config.Notify, name, fmt.Sprintf("SOCKS5 %s\nProxy is very slow", name))
+			if tracker.SuccessfulTestsPerformed() >= 3 && !tracker.SpeedIsAbove(mconfig.TestDownload.SLO.MinBytesPerSecond, mconfig.TestDownload.SLO.SpeedTarget) {
+				FailAndNotify(config.Notify, name, fmt.Sprintf("Proxy is very slow (target of %s/s for %d%% of connections not met)", bytefmt.ByteSize(mconfig.TestDownload.SLO.MinBytesPerSecond), int(mconfig.TestDownload.SLO.SpeedTarget*100)))
 				continue
 			}
 

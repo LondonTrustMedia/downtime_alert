@@ -3,7 +3,7 @@ package slo
 import "time"
 import "encoding/json"
 
-type historyEntry struct {
+type HistoryEntry struct {
 	RecordedTime   time.Time `json:"time"`
 	Failed         bool
 	FailMessage    string `json:"fail-msg"`
@@ -12,7 +12,7 @@ type historyEntry struct {
 
 // Tracker tracks uptime/speed data and SLO objectives.
 type Tracker struct {
-	history []historyEntry
+	History []HistoryEntry
 }
 
 // NewTracker returns a new Tracker.
@@ -35,7 +35,7 @@ func (t *Tracker) String() string {
 
 // AddDownload adds a successful download to our history.
 func (t *Tracker) AddDownload(recordedTime time.Time, bytesPerSecond uint64) {
-	t.history = append(t.history, historyEntry{
+	t.History = append(t.History, HistoryEntry{
 		RecordedTime:   recordedTime,
 		Failed:         false,
 		BytesPerSecond: bytesPerSecond,
@@ -44,7 +44,7 @@ func (t *Tracker) AddDownload(recordedTime time.Time, bytesPerSecond uint64) {
 
 // AddFailure adds a failure entry to our history.
 func (t *Tracker) AddFailure(recordedTime time.Time, message string) {
-	t.history = append(t.history, historyEntry{
+	t.History = append(t.History, HistoryEntry{
 		RecordedTime: recordedTime,
 		Failed:       true,
 		FailMessage:  message,
@@ -54,31 +54,31 @@ func (t *Tracker) AddFailure(recordedTime time.Time, message string) {
 // CullHistory removes old history entries.
 func (t *Tracker) CullHistory(earliestTimeToKeep time.Time) {
 	// all good
-	if len(t.history) < 1 || t.history[0].RecordedTime.After(earliestTimeToKeep) {
+	if len(t.History) < 1 || t.History[0].RecordedTime.After(earliestTimeToKeep) {
 		return
 	}
 
-	var newHistory []historyEntry
+	var newHistory []HistoryEntry
 
-	for _, info := range t.history {
+	for _, info := range t.History {
 		if info.RecordedTime.After(earliestTimeToKeep) {
 			newHistory = append(newHistory, info)
 		}
 	}
 
-	t.history = newHistory
+	t.History = newHistory
 }
 
 // TotalTestsPerformed returns how many tests have been performed.
 func (t *Tracker) TotalTestsPerformed() int {
-	return len(t.history)
+	return len(t.History)
 }
 
 // SuccessfulTestsPerformed returns how many successful tests have been performed.
 // Useful when looking at when to use results from SpeedIsAbove.
 func (t *Tracker) SuccessfulTestsPerformed() int {
 	var tests int
-	for _, info := range t.history {
+	for _, info := range t.History {
 		if !info.Failed {
 			tests++
 		}
@@ -88,13 +88,13 @@ func (t *Tracker) SuccessfulTestsPerformed() int {
 
 // ConsecutiveFailures returns the last consecutive failues and their error messages.
 func (t *Tracker) ConsecutiveFailures() (int, []string) {
-	if len(t.history) < 1 || !t.history[len(t.history)-1].Failed {
+	if len(t.History) < 1 || !t.History[len(t.History)-1].Failed {
 		return 0, []string{}
 	}
 
 	// not efficient, but it works and is simple to implement
 	var failErrorMessages []string
-	for _, info := range t.history {
+	for _, info := range t.History {
 		if !info.Failed {
 			failErrorMessages = []string{}
 			continue
@@ -108,7 +108,7 @@ func (t *Tracker) ConsecutiveFailures() (int, []string) {
 
 // UptimeIsAbove says whether the current uptime is above the given percentage.
 func (t *Tracker) UptimeIsAbove(acceptableUptime float64) bool {
-	if len(t.history) < 1 {
+	if len(t.History) < 1 {
 		return true
 	}
 
@@ -116,7 +116,7 @@ func (t *Tracker) UptimeIsAbove(acceptableUptime float64) bool {
 	var failedTests int
 	var overallTests int
 
-	for _, info := range t.history {
+	for _, info := range t.History {
 		overallTests++
 		if info.Failed {
 			failedTests++
@@ -133,7 +133,7 @@ func (t *Tracker) UptimeIsAbove(acceptableUptime float64) bool {
 
 // SpeedIsAbove says whether the current uptime is above the given percentage.
 func (t *Tracker) SpeedIsAbove(minimumBytesPerSecond uint64, passTarget float64) bool {
-	if len(t.history) < 1 {
+	if len(t.History) < 1 {
 		return true
 	}
 
@@ -141,7 +141,7 @@ func (t *Tracker) SpeedIsAbove(minimumBytesPerSecond uint64, passTarget float64)
 	var failedTests int
 	var overallTests int
 
-	for _, info := range t.history {
+	for _, info := range t.History {
 		if info.Failed {
 			continue
 		}
