@@ -126,6 +126,7 @@ Options:
 			err = lib.CheckSocks5(tracker, mconfig, credsToUse)
 			if err != nil {
 				tracker.AddFailure(time.Now(), err.Error())
+				fmt.Println("SOCKS5 check failed:", err.Error())
 			}
 
 			// remove old history
@@ -135,19 +136,20 @@ Options:
 			//TODO(dan): Don't alert 3000 times for the same issue, implement failure pattern detection and hiding and all.
 			// We'll likely integrate this in as a "ShouldAlert" function into the tracker itself.
 			failCount, failMessages := tracker.ConsecutiveFailures()
-			if failCount >= mconfig.TestDownload.SLO.MaxFailuresInARow {
+			var alerted bool
+			if !alerted && failCount >= mconfig.TestDownload.SLO.MaxFailuresInARow {
 				FailAndNotify(config.Notify, name, fmt.Sprintf("Failed %d times in a row:\n%s", failCount, failMessages))
-				continue
+				alerted = true
 			}
 
-			if tracker.TotalTestsPerformed() >= 3 && !tracker.UptimeIsAbove(mconfig.TestDownload.SLO.UptimeTarget) {
+			if !alerted && tracker.TotalTestsPerformed() >= 3 && !tracker.UptimeIsAbove(mconfig.TestDownload.SLO.UptimeTarget) {
 				FailAndNotify(config.Notify, name, fmt.Sprintf("Uptime is lower than %f", mconfig.TestDownload.SLO.UptimeTarget))
-				continue
+				alerted = true
 			}
 
-			if tracker.SuccessfulTestsPerformed() >= 3 && !tracker.SpeedIsAbove(mconfig.TestDownload.SLO.MinBytesPerSecond, mconfig.TestDownload.SLO.SpeedTarget) {
+			if !alerted && tracker.SuccessfulTestsPerformed() >= 3 && !tracker.SpeedIsAbove(mconfig.TestDownload.SLO.MinBytesPerSecond, mconfig.TestDownload.SLO.SpeedTarget) {
 				FailAndNotify(config.Notify, name, fmt.Sprintf("Proxy is very slow (target of %s/s for %d%% of connections not met)", bytefmt.ByteSize(mconfig.TestDownload.SLO.MinBytesPerSecond), int(mconfig.TestDownload.SLO.SpeedTarget*100)))
-				continue
+				alerted = true
 			}
 
 			// save tracker
