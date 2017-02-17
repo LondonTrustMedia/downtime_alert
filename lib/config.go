@@ -121,27 +121,27 @@ func LoadConfig(filename string) (*Config, error) {
 	// get RecheckDelayDuration
 	config.RecheckDelayDuration, err = time.ParseDuration(config.RecheckDelay)
 	if err != nil {
-		return nil, fmt.Errorf("Could not parse RecheckDelay: %s", err.Error())
+		return &config, fmt.Errorf("Could not parse RecheckDelay: %s", err.Error())
 	}
 
 	// calculate TestDownloadConfig stuff
 	for name, info := range config.Services.Socks5 {
 		info.TestDownload.SLO.HistoryRetained, err = time.ParseDuration(info.TestDownload.SLO.HistoryRetainedString)
 		if err != nil {
-			return nil, fmt.Errorf("Could not parse history-retained in SOCKS5 %s: %s", name, err.Error())
+			return &config, fmt.Errorf("Could not parse history-retained in SOCKS5 %s: %s", name, err.Error())
 		}
 
 		if info.TestDownload.MaxSizeToDLString != "" {
 			info.TestDownload.MaxBytesToDL, err = bytefmt.ToBytes(info.TestDownload.MaxSizeToDLString)
 			if err != nil {
-				return nil, fmt.Errorf("Could not parse max-size-to-dl in SOCKS5 %s: %s", name, err.Error())
+				return &config, fmt.Errorf("Could not parse max-size-to-dl in SOCKS5 %s: %s", name, err.Error())
 			}
 		}
 
 		if info.TestDownload.SLO.MinSpeedPerSecondString != "" {
 			info.TestDownload.SLO.MinBytesPerSecond, err = bytefmt.ToBytes(info.TestDownload.SLO.MinSpeedPerSecondString)
 			if err != nil {
-				return nil, fmt.Errorf("Could not parse max-speed-per-second in SOCKS5 %s: %s", name, err.Error())
+				return &config, fmt.Errorf("Could not parse min-speed-per-second in SOCKS5 %s: [%s] %s", name, info.TestDownload.SLO.MinSpeedPerSecondString, err.Error())
 			}
 		}
 

@@ -78,6 +78,11 @@ Options:
 		// load config
 		config, err := lib.LoadConfig(arguments["--config"].(string))
 		if err != nil {
+			// try notifying if we can
+			if config != nil {
+				FailAndNotify(config.Notify, "Config", fmt.Sprintf("Failed to load config: %s", err.Error()))
+			}
+
 			log.Fatal("Could not load config file: ", err.Error())
 		}
 
