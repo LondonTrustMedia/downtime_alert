@@ -1,7 +1,12 @@
 package slo
 
-import "time"
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+	"time"
+
+	"code.cloudfoundry.org/bytefmt"
+)
 
 type HistoryEntry struct {
 	RecordedTime   time.Time `json:"time"`
@@ -157,4 +162,22 @@ func (t *Tracker) SpeedIsAbove(minimumBytesPerSecond uint64, passTarget float64)
 		return true
 	}
 	return false
+}
+
+// AverageSpeed returns the average speed of all the tests we're keeping track of.
+func (t *Tracker) AverageSpeed() string {
+	var overallSpeed uint64
+	var overallTests int
+
+	for _, info := range t.History {
+		if info.Failed {
+			continue
+		}
+		overallTests++
+		overallSpeed += info.BytesPerSecond
+	}
+
+	averageSpeedInBytes := overallSpeed / uint64(overallTests)
+
+	return fmt.Sprintf("%s/s", bytefmt.ByteSize(averageSpeedInBytes))
 }

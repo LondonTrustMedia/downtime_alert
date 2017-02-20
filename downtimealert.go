@@ -153,7 +153,7 @@ Options:
 			}
 
 			if !alerted && tracker.SuccessfulTestsPerformed() >= 3 && !tracker.SpeedIsAbove(mconfig.TestDownload.SLO.MinBytesPerSecond, mconfig.TestDownload.SLO.SpeedTarget) {
-				FailAndNotify(config.Notify, name, fmt.Sprintf("Proxy is very slow (target of %s/s for %d%% of connections not met)", bytefmt.ByteSize(mconfig.TestDownload.SLO.MinBytesPerSecond), int(mconfig.TestDownload.SLO.SpeedTarget*100)))
+				FailAndNotify(config.Notify, name, fmt.Sprintf("Proxy is very slow. Target of %s/s for %d%% of connections not met -- average is %s from %d tests", bytefmt.ByteSize(mconfig.TestDownload.SLO.MinBytesPerSecond), int(mconfig.TestDownload.SLO.SpeedTarget*100), tracker.AverageSpeed(), len(tracker.History)))
 				alerted = true
 			}
 
