@@ -7,6 +7,12 @@ Configuration is done through the `config.yaml` file. Take a look at `config.exa
 Written by Daniel <doaks@londontrustmedia.com>, so yell at me if you need any help with this.
 
 
+## Features
+
+* Notifications via SMS (Telstra API) and email (Sendgrid).
+* Monitoring both webpages and SOCKS5 proxies.
+
+
 ## Checking Method
 
 So let's go into some more detail about how we check whether we should alert for a service.
@@ -32,3 +38,5 @@ After this, the monitor will send three (default) alerts, one minute (default) a
     1. Detect proxy/VPN failure.
 3. Third launch of the monitor.
     1. Detect proxy/VPN failure. Assume service is down and start alerting.
+
+In addition, SOCKS proxies and VPNs can be checked for speed issues. You set an SLO of, say, 1.5MB/s or higher for 70% of connections, and if the performance drops below that you start getting alerts in the same way as if there was a failure.
