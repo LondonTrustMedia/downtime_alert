@@ -58,8 +58,13 @@ services:
     web:
         "ABC Website":
             url: https://example.com/
+            matches:
+                - "used for illustrative examples"
+                - "use this domain in examples without prior coordination or asking for permission"
         "ABC Blog":
             url: https://blog.example.com/
+                - "News on the example market"
+                - "More information"
     # socks5 proxy
     socks5:
         "ABC SOCKS5 Proxy":

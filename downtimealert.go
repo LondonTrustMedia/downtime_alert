@@ -9,11 +9,11 @@ import (
 
 	"github.com/LondonTrustMedia/downtime_alert/lib"
 	"github.com/LondonTrustMedia/downtime_alert/lib/slo"
+	docopt "github.com/docopt/docopt-go"
 
 	"net"
 
 	"code.cloudfoundry.org/bytefmt"
-	"github.com/docopt/docopt-go"
 	"github.com/tidwall/buntdb"
 )
 
@@ -174,9 +174,11 @@ Options:
 			if err != nil {
 				// wait for momentary net glitches to pass
 				time.Sleep(config.RecheckDelayDuration)
+				log.Printf("Page failed [%s], retrying", err.Error())
 				err = lib.CheckWebpage(mconfig)
 				if err != nil {
 					failure = true
+					log.Printf("Page failed again [%s]", err.Error())
 				}
 			}
 
