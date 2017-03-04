@@ -9,8 +9,8 @@ import (
 )
 
 // CheckWebpage checks the given web page and returns an error if it doesn't work.
-func CheckWebpage(config WebpageConfig) error {
-	log.Println("Checking web page", config.URL)
+func CheckWebpage(name string, config WebpageConfig) error {
+	log.Println("Checking web page", name, "-", config.URL)
 
 	client := &http.Client{}
 

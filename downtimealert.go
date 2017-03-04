@@ -170,12 +170,12 @@ Options:
 			// require two failures in a row to report it, to prevent notification on momentary net glitches
 			var failure bool
 
-			err = lib.CheckWebpage(mconfig)
+			err = lib.CheckWebpage(name, mconfig)
 			if err != nil {
 				// wait for momentary net glitches to pass
 				time.Sleep(config.RecheckDelayDuration)
 				log.Printf("Page failed [%s], retrying", err.Error())
-				err = lib.CheckWebpage(mconfig)
+				err = lib.CheckWebpage(name, mconfig)
 				if err != nil {
 					failure = true
 					log.Printf("Page failed again [%s]", err.Error())
