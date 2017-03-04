@@ -12,10 +12,20 @@ import (
 func CheckWebpage(config WebpageConfig) error {
 	log.Println("Checking web page", config.URL)
 
-	resp, err := http.Get(config.URL)
+	client := &http.Client{}
 
+	req, err := http.NewRequest("GET", config.URL, nil)
 	if err != nil {
-		return err
+		log.Fatalln(err)
+	}
+
+	if config.UserAgent != "" {
+		req.Header.Set("User-Agent", config.UserAgent)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatalln(err)
 	}
 
 	if resp.StatusCode != http.StatusOK {

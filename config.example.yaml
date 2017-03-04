@@ -65,6 +65,11 @@ services:
             url: https://blog.example.com/
                 - "News on the example market"
                 - "More information"
+        "ABC Blog - Mobile Theme":
+            user-agent: "Mozilla/6.0 (iPhone; CPU iPhone OS 8_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/8.0 Mobile/10A5376e Safari/8536.25"
+            url: https://blog.example.com/
+                - "News on the example market"
+                - "More information"
     # socks5 proxy
     socks5:
         "ABC SOCKS5 Proxy":
