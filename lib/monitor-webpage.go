@@ -8,10 +8,7 @@ import (
 	"strings"
 )
 
-// CheckWebpage checks the given web page and returns an error if it doesn't work.
-func CheckWebpage(name string, config WebpageConfig) error {
-	log.Println("Checking web page", name, "-", config.URL)
-
+func checkPage(name string, config WebpageConfig, userAgent string, useUserAgent bool) error {
 	client := &http.Client{}
 
 	req, err := http.NewRequest("GET", config.URL, nil)
@@ -49,4 +46,28 @@ func CheckWebpage(name string, config WebpageConfig) error {
 	}
 
 	return nil
+}
+
+// CheckWebpage checks the given web page and returns an error if it doesn't work.
+func CheckWebpage(name string, config WebpageConfig) error {
+	log.Println("Checking web page", name, "-", config.URL)
+
+	var err error
+
+	if len(config.UserAgents) > 0 {
+		for _, agent := range config.UserAgents {
+			log.Println("Using user agent", agent)
+			err = checkPage(name, config, agent, true)
+			if err != nil {
+				err = fmt.Errorf("Failed\nUser Agent: %s\nError: %s", agent, err.Error())
+				break
+			}
+		}
+	} else if config.UserAgent != "" {
+		err = checkPage(name, config, config.UserAgent, true)
+	} else {
+		err = checkPage(name, config, "", false)
+	}
+
+	return err
 }

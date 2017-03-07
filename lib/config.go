@@ -50,9 +50,10 @@ type NotifyConfig struct {
 
 // WebpageConfig holds the monitor configuration for a web page.
 type WebpageConfig struct {
-	URL       string
-	UserAgent string `yaml:"user-agent"`
-	Matches   []string
+	URL        string
+	UserAgent  string   `yaml:"user-agent"`
+	UserAgents []string `yaml:"user-agents"`
+	Matches    []string
 }
 
 // UserPassCredentialConfig holds credentials for typical username+password services.
