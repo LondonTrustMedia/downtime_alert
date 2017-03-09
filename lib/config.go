@@ -87,6 +87,22 @@ type Socks5Config struct {
 	TestDownload        TestDownloadConfig `yaml:"test-download"`
 }
 
+// PingConfig is the info for a test ping.
+type PingConfig struct {
+	Host                string
+	PingsPerRun         int `yaml:"pings-per-run"`
+	WaitBetweenAttempts int `yaml:"wait-between-attempts"`
+	SLO                 struct {
+		HistoryRetainedString string `yaml:"history-retained"`
+		HistoryRetained       time.Duration
+		MaxFailuresInARow     int     `yaml:"max-failures-in-a-row"`
+		UptimeTarget          float64 `yaml:"uptime-target"`
+		MaxRTTString          string  `yaml:"max-rtt"`
+		MaxRTT                time.Duration
+		SpeedTarget           float64 `yaml:"speed-target"`
+	}
+}
+
 // Config holds the entire configuration for the service monitor.
 type Config struct {
 	Datastore string
@@ -105,6 +121,7 @@ type Config struct {
 	Services struct {
 		Webpage map[string]WebpageConfig
 		Socks5  map[string]Socks5Config
+		Ping    map[string]PingConfig
 	}
 }
 
@@ -150,6 +167,22 @@ func LoadConfig(filename string) (*Config, error) {
 
 		// save new info
 		config.Services.Socks5[name] = info
+	}
+
+	// calculate PingConfig stuff
+	for name, info := range config.Services.Ping {
+		info.SLO.HistoryRetained, err = time.ParseDuration(info.SLO.HistoryRetainedString)
+		if err != nil {
+			return &config, fmt.Errorf("Could not parse history-retained in Ping %s: %s", name, err.Error())
+		}
+
+		info.SLO.MaxRTT, err = time.ParseDuration(info.SLO.MaxRTTString)
+		if err != nil {
+			return &config, fmt.Errorf("Could not parse max-rtt in Ping %s: %s", name, err.Error())
+		}
+
+		// save new info
+		config.Services.Ping[name] = info
 	}
 
 	return &config, nil

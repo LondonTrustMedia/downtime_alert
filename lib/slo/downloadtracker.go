@@ -8,6 +8,7 @@ import (
 	"code.cloudfoundry.org/bytefmt"
 )
 
+// DownloadHistoryEntry represents a single attempt at downloading something.
 type DownloadHistoryEntry struct {
 	RecordedTime   time.Time `json:"time"`
 	Failed         bool

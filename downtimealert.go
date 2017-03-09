@@ -54,6 +54,21 @@ func LoadDownloadTrackerFromDatastore(db *buntdb.DB, section, name string) (*slo
 	return tracker, err
 }
 
+// LoadPingTrackerFromDatastore returns a PingTracker instance from the given datastore.
+func LoadPingTrackerFromDatastore(db *buntdb.DB, section, name string) (*slo.PingTracker, error) {
+	sloTrackerKey := fmt.Sprintf(keySloTracker, section, name)
+	var tracker *slo.PingTracker
+	err := db.Update(func(tx *buntdb.Tx) error {
+		val, err := tx.Get(sloTrackerKey)
+		if err != nil || len(val) < 1 {
+			return err
+		}
+		tracker, err = slo.LoadPingTrackerFromString(val)
+		return err
+	})
+	return tracker, err
+}
+
 func main() {
 	usage := `downtimealert.
 downtimealert connects to and monitors services, and reports outages.
@@ -192,6 +207,60 @@ Options:
 			} else {
 				lib.MarkUp(db, "webpage", name)
 			}
+		}
+
+		// check Ping proxies
+		for name, mconfig := range config.Services.Ping {
+			// see whether to skip check on this launch
+			countWait := lib.GetCounter(db, fmt.Sprintf("ping-%s-countwait", mconfig.Host), mconfig.WaitBetweenAttempts)
+
+			if countWait != 0 {
+				log.Println("Skipping PING check for", mconfig.Host, "this launch")
+				continue
+			}
+
+			// confirm that we have our SLO tracker
+			tracker, err := LoadPingTrackerFromDatastore(db, "ping", name)
+			if err != nil {
+				tracker = slo.NewPingTracker()
+			}
+
+			// check!
+			err = lib.CheckPing(tracker, mconfig)
+			if err != nil {
+				tracker.AddFailure(time.Now())
+				fmt.Println("PING check failed", err.Error())
+			}
+
+			// remove old history
+			tracker.CullHistory(time.Now().Add(mconfig.SLO.HistoryRetained * -1))
+
+			// check specific failures
+			//TODO(dan): Don't alert 3000 times for the same issue, implement failure pattern detection and hiding and all.
+			// We'll likely integrate this in as a "ShouldAlert" function into the tracker itself.
+			failCount := tracker.ConsecutiveFailures()
+			var alerted bool
+			if !alerted && failCount >= mconfig.SLO.MaxFailuresInARow {
+				FailAndNotify(config.Notify, name, fmt.Sprintf("Failed %d times in a row", failCount))
+				alerted = true
+			}
+
+			if !alerted && tracker.TotalTestsPerformed() >= 3 && !tracker.UptimeIsAbove(mconfig.SLO.UptimeTarget) {
+				FailAndNotify(config.Notify, name, fmt.Sprintf("Uptime is lower than %f", 100.0*mconfig.SLO.UptimeTarget))
+				alerted = true
+			}
+
+			if !alerted && tracker.SuccessfulTestsPerformed() >= 16 && !tracker.AvgRTTIsBelow(mconfig.SLO.MaxRTT, mconfig.SLO.SpeedTarget) {
+				FailAndNotify(config.Notify, name, fmt.Sprintf("Host is very slow. Target of %v for %d%% of connections not met -- average is %v from %d tests", mconfig.SLO.MaxRTT, int(mconfig.SLO.SpeedTarget*100), tracker.AverageRTT(), len(tracker.History)))
+				alerted = true
+			}
+
+			// save tracker
+			sloTrackerKey := fmt.Sprintf(keySloTracker, "ping", name)
+			db.Update(func(tx *buntdb.Tx) error {
+				tx.Set(sloTrackerKey, tracker.String(), nil)
+				return nil
+			})
 		}
 	}
 }

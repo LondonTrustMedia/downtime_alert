@@ -125,3 +125,37 @@ services:
                     # how many of our tests do we expect to be over the min speed
                     # 0.25 == 25%, etc
                     speed-target: 0.7
+
+    # pinging servers
+    ping:
+        "Example":
+            # host to ping
+            host: www.example.com
+
+            # pings to send per run
+            pings-per-run: 5
+
+            # how many launches of downtimealert we should wait between every check that we do
+            wait-between-attempts: 0
+
+            # service level objectives we want to achieve, and respectively those that we alert on
+            slo:
+                # how long to retain history (to calculate targets from)
+                # like:  5h12m37s
+                history-retained: 30m
+
+                # how many failures in a row before we start yelling at people
+                max-failures-in-a-row: 10
+
+                # what uptime do we expect.
+                # covers auth failures, just not being able to access it, etc.
+                # if they can get to d/ling (below), it's not an uptime failure.
+                # 0.25 == 25%, etc
+                uptime-target: 0.9
+
+                # maximum round trip time we expect
+                max-rtt: 5s
+
+                # how many of our tests do we expect to be over the min speed
+                # 0.25 == 25%, etc
+                speed-target: 0.25
