@@ -20,13 +20,13 @@ type DownloadTracker struct {
 	History []DownloadHistoryEntry
 }
 
-// NewTracker returns a new DownloadTracker.
-func NewTracker() *DownloadTracker {
+// NewDownloadTracker returns a new DownloadTracker.
+func NewDownloadTracker() *DownloadTracker {
 	return &DownloadTracker{}
 }
 
-// LoadFromString returns a DownloadTracker instance, from a string representation created by ToString.
-func LoadFromString(representation string) (*DownloadTracker, error) {
+// LoadDownloadTrackerFromString returns a DownloadTracker instance, from a string representation created by ToString.
+func LoadDownloadTrackerFromString(representation string) (*DownloadTracker, error) {
 	var t *DownloadTracker
 	err := json.Unmarshal([]byte(representation), &t)
 	return t, err

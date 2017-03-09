@@ -39,8 +39,8 @@ func FailAndNotify(nconfig lib.NotifyConfig, serviceName string, errorMessage st
 	}
 }
 
-// LoadFromDatastore returns a DownloadTracker instance from the given datastore.
-func LoadFromDatastore(db *buntdb.DB, section, name string) (*slo.DownloadTracker, error) {
+// LoadDownloadTrackerFromDatastore returns a DownloadTracker instance from the given datastore.
+func LoadDownloadTrackerFromDatastore(db *buntdb.DB, section, name string) (*slo.DownloadTracker, error) {
 	sloTrackerKey := fmt.Sprintf(keySloTracker, section, name)
 	var tracker *slo.DownloadTracker
 	err := db.Update(func(tx *buntdb.Tx) error {
@@ -48,7 +48,7 @@ func LoadFromDatastore(db *buntdb.DB, section, name string) (*slo.DownloadTracke
 		if err != nil || len(val) < 1 {
 			return err
 		}
-		tracker, err = slo.LoadFromString(val)
+		tracker, err = slo.LoadDownloadTrackerFromString(val)
 		return err
 	})
 	return tracker, err
@@ -122,9 +122,9 @@ Options:
 			credsToUse := lib.GetCounter(db, fmt.Sprintf("socks5-%s-%d-credentials", mconfig.Host, mconfig.Port), len(mconfig.Credentials)-1)
 
 			// confirm that we have our SLO tracker
-			tracker, err := LoadFromDatastore(db, "socks5", name)
+			tracker, err := LoadDownloadTrackerFromDatastore(db, "socks5", name)
 			if err != nil {
-				tracker = slo.NewTracker()
+				tracker = slo.NewDownloadTracker()
 			}
 
 			// check!
