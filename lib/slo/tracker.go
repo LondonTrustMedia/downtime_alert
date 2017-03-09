@@ -8,39 +8,39 @@ import (
 	"code.cloudfoundry.org/bytefmt"
 )
 
-type HistoryEntry struct {
+type DownloadHistoryEntry struct {
 	RecordedTime   time.Time `json:"time"`
 	Failed         bool
 	FailMessage    string `json:"fail-msg"`
 	BytesPerSecond uint64 `json:"bytes-per-second"`
 }
 
-// Tracker tracks uptime/speed data and SLO objectives.
-type Tracker struct {
-	History []HistoryEntry
+// DownloadTracker tracks uptime/speed data and SLO objectives.
+type DownloadTracker struct {
+	History []DownloadHistoryEntry
 }
 
-// NewTracker returns a new Tracker.
-func NewTracker() *Tracker {
-	return &Tracker{}
+// NewTracker returns a new DownloadTracker.
+func NewTracker() *DownloadTracker {
+	return &DownloadTracker{}
 }
 
-// LoadFromString returns a Tracker instance, from a string representation created by ToString.
-func LoadFromString(representation string) (*Tracker, error) {
-	var t *Tracker
+// LoadFromString returns a DownloadTracker instance, from a string representation created by ToString.
+func LoadFromString(representation string) (*DownloadTracker, error) {
+	var t *DownloadTracker
 	err := json.Unmarshal([]byte(representation), &t)
 	return t, err
 }
 
-// String returns a string representation of Tracker.
-func (t *Tracker) String() string {
+// String returns a string representation of DownloadTracker.
+func (t *DownloadTracker) String() string {
 	trackerString, _ := json.Marshal(t)
 	return string(trackerString)
 }
 
 // AddDownload adds a successful download to our history.
-func (t *Tracker) AddDownload(recordedTime time.Time, bytesPerSecond uint64) {
-	t.History = append(t.History, HistoryEntry{
+func (t *DownloadTracker) AddDownload(recordedTime time.Time, bytesPerSecond uint64) {
+	t.History = append(t.History, DownloadHistoryEntry{
 		RecordedTime:   recordedTime,
 		Failed:         false,
 		BytesPerSecond: bytesPerSecond,
@@ -48,8 +48,8 @@ func (t *Tracker) AddDownload(recordedTime time.Time, bytesPerSecond uint64) {
 }
 
 // AddFailure adds a failure entry to our history.
-func (t *Tracker) AddFailure(recordedTime time.Time, message string) {
-	t.History = append(t.History, HistoryEntry{
+func (t *DownloadTracker) AddFailure(recordedTime time.Time, message string) {
+	t.History = append(t.History, DownloadHistoryEntry{
 		RecordedTime: recordedTime,
 		Failed:       true,
 		FailMessage:  message,
@@ -57,13 +57,13 @@ func (t *Tracker) AddFailure(recordedTime time.Time, message string) {
 }
 
 // CullHistory removes old history entries.
-func (t *Tracker) CullHistory(earliestTimeToKeep time.Time) {
+func (t *DownloadTracker) CullHistory(earliestTimeToKeep time.Time) {
 	// all good
 	if len(t.History) < 1 || t.History[0].RecordedTime.After(earliestTimeToKeep) {
 		return
 	}
 
-	var newHistory []HistoryEntry
+	var newHistory []DownloadHistoryEntry
 
 	for _, info := range t.History {
 		if info.RecordedTime.After(earliestTimeToKeep) {
@@ -75,13 +75,13 @@ func (t *Tracker) CullHistory(earliestTimeToKeep time.Time) {
 }
 
 // TotalTestsPerformed returns how many tests have been performed.
-func (t *Tracker) TotalTestsPerformed() int {
+func (t *DownloadTracker) TotalTestsPerformed() int {
 	return len(t.History)
 }
 
 // SuccessfulTestsPerformed returns how many successful tests have been performed.
 // Useful when looking at when to use results from SpeedIsAbove.
-func (t *Tracker) SuccessfulTestsPerformed() int {
+func (t *DownloadTracker) SuccessfulTestsPerformed() int {
 	var tests int
 	for _, info := range t.History {
 		if !info.Failed {
@@ -92,7 +92,7 @@ func (t *Tracker) SuccessfulTestsPerformed() int {
 }
 
 // ConsecutiveFailures returns the last consecutive failues and their error messages.
-func (t *Tracker) ConsecutiveFailures() (int, []string) {
+func (t *DownloadTracker) ConsecutiveFailures() (int, []string) {
 	if len(t.History) < 1 || !t.History[len(t.History)-1].Failed {
 		return 0, []string{}
 	}
@@ -112,7 +112,7 @@ func (t *Tracker) ConsecutiveFailures() (int, []string) {
 }
 
 // UptimeIsAbove says whether the current uptime is above the given percentage.
-func (t *Tracker) UptimeIsAbove(acceptableUptime float64) bool {
+func (t *DownloadTracker) UptimeIsAbove(acceptableUptime float64) bool {
 	if len(t.History) < 1 {
 		return true
 	}
@@ -137,7 +137,7 @@ func (t *Tracker) UptimeIsAbove(acceptableUptime float64) bool {
 }
 
 // SpeedIsAbove says whether the current uptime is above the given percentage.
-func (t *Tracker) SpeedIsAbove(minimumBytesPerSecond uint64, passTarget float64) bool {
+func (t *DownloadTracker) SpeedIsAbove(minimumBytesPerSecond uint64, passTarget float64) bool {
 	if len(t.History) < 1 {
 		return true
 	}
@@ -165,7 +165,7 @@ func (t *Tracker) SpeedIsAbove(minimumBytesPerSecond uint64, passTarget float64)
 }
 
 // AverageSpeed returns the average speed of all the tests we're keeping track of.
-func (t *Tracker) AverageSpeed() string {
+func (t *DownloadTracker) AverageSpeed() string {
 	var overallSpeed uint64
 	var overallTests int
 

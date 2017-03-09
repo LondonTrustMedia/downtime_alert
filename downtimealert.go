@@ -39,10 +39,10 @@ func FailAndNotify(nconfig lib.NotifyConfig, serviceName string, errorMessage st
 	}
 }
 
-// LoadFromDatastore returns a Tracker instance from the given datastore.
-func LoadFromDatastore(db *buntdb.DB, section, name string) (*slo.Tracker, error) {
+// LoadFromDatastore returns a DownloadTracker instance from the given datastore.
+func LoadFromDatastore(db *buntdb.DB, section, name string) (*slo.DownloadTracker, error) {
 	sloTrackerKey := fmt.Sprintf(keySloTracker, section, name)
-	var tracker *slo.Tracker
+	var tracker *slo.DownloadTracker
 	err := db.Update(func(tx *buntdb.Tx) error {
 		val, err := tx.Get(sloTrackerKey)
 		if err != nil || len(val) < 1 {

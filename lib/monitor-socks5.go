@@ -20,7 +20,7 @@ import (
 )
 
 // CheckSocks5 checks the given SOCKS5 proxy and returns an error if it doesn't work.
-func CheckSocks5(tracker *slo.Tracker, config Socks5Config, credsToUse int) error {
+func CheckSocks5(tracker *slo.DownloadTracker, config Socks5Config, credsToUse int) error {
 	log.Println("Checking SOCKS5 proxy", config.Host)
 
 	// assemble socks5 url
