@@ -117,6 +117,7 @@ Options:
 		db, err := buntdb.Open(config.Datastore)
 		if err != nil {
 			FailAndNotify(config.Notify, "Datastore", fmt.Sprintf("Couldn't open bunt datastore: %s", err.Error()))
+			return
 		}
 		defer db.Close()
 
